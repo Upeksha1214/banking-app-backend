@@ -10,6 +10,7 @@ import (
 	"banking-app/handlers"
 
 	"github.com/gorilla/mux"
+	"github.com/rs/cors" // Import the cors package
 )
 
 func main() {
@@ -41,8 +42,23 @@ func main() {
 	router.HandleFunc("/accounts/withdraw", handlers.Withdraw).Methods("POST")
 	router.HandleFunc("/accounts/transfer", handlers.Transfer).Methods("POST")
 
+	// --- CORS Configuration ---
+	// For development, allow all origins. In production, restrict to your frontend's domain.
+	c := cors.New(cors.Options{
+		AllowedOrigins: []string{"http://localhost:3000"}, // Allow your React app's origin
+		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders: []string{"Content-Type", "Authorization"},
+		ExposedHeaders: []string{"Content-Length"},
+		AllowCredentials: true,
+		Debug: true, // Enable debug logging for CORS issues (optional)
+	})
+
+	// Wrap your router with the CORS middleware
+	handler := c.Handler(router)
+
 	// Start the HTTP server
 	port := ":8080"
 	fmt.Printf("Server starting on port %s...\n", port)
-	log.Fatal(http.ListenAndServe(port, router))
+	// Use the CORS-wrapped handler instead of the raw router
+	log.Fatal(http.ListenAndServe(port, handler))
 }
